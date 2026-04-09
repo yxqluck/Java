@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "compile-with-mysql-driver",
+            "type": "shell",
+            "command": "${command:java.command.compile.workspace}",
+            "problemMatcher": ["$javac"],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run: SQLtest (with MySQL driver)",
+            "type": "shell",
+            "command": "cd ${workspaceFolder} && & 'C:\\Program Files\\Java\\jdk-21\\bin\\javac.exe' -cp lib\\mysql-connector-j-9.6.0.jar -d bin src\\SQLtest.java && & 'C:\\Program Files\\Java\\jdk-21\\bin\\java.exe' -cp \"bin;lib\\mysql-connector-j-9.6.0.jar\" SQLtest",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Compile all with MySQL driver",
+            "type": "shell",
+            "command": "cd ${workspaceFolder} && & 'C:\\Program Files\\Java\\jdk-21\\bin\\javac.exe' -cp lib\\mysql-connector-j-9.6.0.jar -d bin src\\*.java",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": ["$javac"],
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}
