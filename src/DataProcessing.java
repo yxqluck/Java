@@ -1,7 +1,6 @@
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
-
 /**
  * 用户数据处理
  * 用户数据的增删改查
@@ -432,6 +431,7 @@ public  class DataProcessing {
             stmt.setString(4, description != null ? description.trim() : "");
             stmt.setString(5, fileName.trim());
             int rowsAffected = stmt.executeUpdate();
+            
             return rowsAffected > 0;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1062) { // Duplicate entry
@@ -463,6 +463,7 @@ public  class DataProcessing {
             stmt.setString(4, archive.getDescription());
             stmt.setString(5, archive.getFileName());
             int rowsAffected = stmt.executeUpdate();
+            
             return rowsAffected > 0;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1062) { // Duplicate entry

@@ -30,6 +30,8 @@ import java.awt.event.ActionEvent;
 	private JTextField textField_2;
 	private JTextField textField_3;
 	String filepath;
+	String fileName;
+	private SocketClient client;
 
 	/**
 	 * Launch the application.
@@ -51,6 +53,7 @@ import java.awt.event.ActionEvent;
 	 * Create the frame.
 	 */
 	public UploadArchive() {
+		client = new SocketClient("localhost", 12345);
 		setTitle("上传档案");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -119,7 +122,8 @@ import java.awt.event.ActionEvent;
 					
 					// 这里可以把路径显示到文本框里
 					// 假设你的文本框名字叫 textField
-					textField_3.setText(file.getName());
+					fileName=file.getName();
+					textField_3.setText(fileName);
 					
 					System.out.println("选中文件：" + filePath);
 					filepath=filePath;
@@ -133,15 +137,36 @@ import java.awt.event.ActionEvent;
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(Operator.uploadArchive(textField.getText(), textField_1.getText(), textField_2.getText(), textField_3.getText(), filepath)) {
-					JOptionPane.showMessageDialog(null, "上传成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+					
+            		try {
+						if(filepath != null && !filepath.isEmpty()) {
+							if(client.uploadFile(filepath,fileName)) {
+								JOptionPane.showMessageDialog(null, "上传成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+							} else {
+								JOptionPane.showMessageDialog(null, "网络上传失败！", "提示", JOptionPane.ERROR_MESSAGE);
+							}
+						} else {
+							JOptionPane.showMessageDialog(null, "请先选择文件！", "提示", JOptionPane.WARNING_MESSAGE);
+						}
+					} catch (Exception e0) {
+						JOptionPane.showMessageDialog(null, "网络错误：" + e0.getMessage(), "提示", JOptionPane.ERROR_MESSAGE);
+					}
+					
+					
 				}else {
-					JOptionPane.showMessageDialog(null, "上传失败！", "提示", JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "数据库上传失败！", "提示", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
 		btnNewButton_1.setBounds(159, 192, 117, 39);
 		contentPane.add(btnNewButton_1);
-		dispose();
+		// 窗口关闭时关闭连接
+		addWindowListener(new java.awt.event.WindowAdapter() {
+			@Override
+			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+				client.closeConnection();
+			}
+		});
 	}
 }
 
@@ -152,6 +177,7 @@ import java.awt.event.ActionEvent;
 		private JPanel contentPane;
 		private JTable table;
 		private DefaultTableModel tableModel;
+		private SocketClient client;
 
 //		public static void main(String[] args) {
 //			EventQueue.invokeLater(new Runnable() {
@@ -167,6 +193,7 @@ import java.awt.event.ActionEvent;
 //		}
 
 		public DownloadArchive() {
+			client = new SocketClient("localhost", 12345);
 			setTitle("下载档案");
 			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			setBounds(100, 100, 750, 400);
@@ -219,7 +246,7 @@ import java.awt.event.ActionEvent;
 					}
 
 					String archiveId = (String) table.getValueAt(selectedRow, 0);
-
+ 					String fileName = (String) table.getValueAt(selectedRow, 3);
 					JFileChooser fileChooser = new JFileChooser();
 					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 					int result = fileChooser.showOpenDialog(null);
@@ -230,7 +257,12 @@ import java.awt.event.ActionEvent;
 
 						try {
 							AbstractUser.downloadArchive(archiveId, folderPath);
-							JOptionPane.showMessageDialog(null, "下载成功！");
+							
+							if(client.downloadFile(fileName, folderPath)) {
+								JOptionPane.showMessageDialog(null, "下载成功！");
+							} else {
+								JOptionPane.showMessageDialog(null, "网络下载失败！", "错误", JOptionPane.ERROR_MESSAGE);
+							}
 						} catch (Exception ex) {
 							ex.printStackTrace();
 							JOptionPane.showMessageDialog(null, "下载失败：" + ex.getMessage());
@@ -241,7 +273,13 @@ import java.awt.event.ActionEvent;
 			btnNewButton.setFont(new Font("宋体", Font.PLAIN, 14));
 			btnNewButton.setBounds(267, 290, 200, 45);
 			contentPane.add(btnNewButton);
-
+			// 窗口关闭时关闭连接
+			addWindowListener(new java.awt.event.WindowAdapter() {
+				@Override
+				public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+					client.closeConnection();
+				}
+			});
 			// 加载数据
 			loadDataFromDB();
 		}
