@@ -91,7 +91,7 @@ public class SocketClient {
       }
 
       // 建立连接
-      connect();
+      // connect();
       try {
          // 发送上传命令
          output.writeUTF("UPLOAD");
@@ -144,7 +144,7 @@ public class SocketClient {
       }
 
       // 建立连接
-      connect();
+      // connect();
       try {
          // 发送下载命令
          output.writeUTF("DOWNLOAD");

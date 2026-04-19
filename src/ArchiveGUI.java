@@ -31,7 +31,6 @@ import java.awt.event.ActionEvent;
 	private JTextField textField_3;
 	String filepath;
 	String fileName;
-	private SocketClient client;
 
 	/**
 	 * Launch the application.
@@ -53,7 +52,7 @@ import java.awt.event.ActionEvent;
 	 * Create the frame.
 	 */
 	public UploadArchive() {
-		client = new SocketClient("localhost", 12345);
+		
 		setTitle("上传档案");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -140,7 +139,7 @@ import java.awt.event.ActionEvent;
 					
             		try {
 						if(filepath != null && !filepath.isEmpty()) {
-							if(client.uploadFile(filepath,fileName)) {
+							if(Main.client.uploadFile(filepath,fileName)) {
 								JOptionPane.showMessageDialog(null, "上传成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
 							} else {
 								JOptionPane.showMessageDialog(null, "网络上传失败！", "提示", JOptionPane.ERROR_MESSAGE);
@@ -164,7 +163,7 @@ import java.awt.event.ActionEvent;
 		addWindowListener(new java.awt.event.WindowAdapter() {
 			@Override
 			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-				client.closeConnection();
+				Main.client.closeConnection();
 			}
 		});
 	}
@@ -177,7 +176,6 @@ import java.awt.event.ActionEvent;
 		private JPanel contentPane;
 		private JTable table;
 		private DefaultTableModel tableModel;
-		private SocketClient client;
 
 //		public static void main(String[] args) {
 //			EventQueue.invokeLater(new Runnable() {
@@ -193,7 +191,6 @@ import java.awt.event.ActionEvent;
 //		}
 
 		public DownloadArchive() {
-			client = new SocketClient("localhost", 12345);
 			setTitle("下载档案");
 			setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			setBounds(100, 100, 750, 400);
@@ -258,7 +255,7 @@ import java.awt.event.ActionEvent;
 						try {
 							AbstractUser.downloadArchive(archiveId, folderPath);
 							
-							if(client.downloadFile(fileName, folderPath)) {
+							if(Main.client.downloadFile(fileName, folderPath)) {
 								JOptionPane.showMessageDialog(null, "下载成功！");
 							} else {
 								JOptionPane.showMessageDialog(null, "网络下载失败！", "错误", JOptionPane.ERROR_MESSAGE);
@@ -277,7 +274,7 @@ import java.awt.event.ActionEvent;
 			addWindowListener(new java.awt.event.WindowAdapter() {
 				@Override
 				public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-					client.closeConnection();
+					Main.client.closeConnection();
 				}
 			});
 			// 加载数据

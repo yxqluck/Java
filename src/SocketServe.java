@@ -35,7 +35,7 @@ public class SocketServe {
         if (!storageDir.exists()) {
             storageDir.mkdirs();
         }
-
+        int i=0;
         // 使用 try-with-resources 确保 ServerSocket 在结束时关闭
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("SocketServe 已启动，监听端口 " + PORT);
@@ -43,10 +43,12 @@ public class SocketServe {
             // 无限循环，持续接受客户端连接
             while (true) {
                 try {
+                    i++;
                     // 阻塞等待客户端连接
                     Socket connection = serverSocket.accept();
-                    // 处理客户端请求
-                    handleClient(connection);
+                    // 为每个客户端连接创建独立线程处理
+                    new CreateSocketThread(connection).start();
+                    System.out.println("启动线程 " + i);
                 } catch (IOException e) {
                     System.err.println("处理客户端连接时发生错误：" + e.getMessage());
                 }
@@ -61,7 +63,7 @@ public class SocketServe {
      *
      * @param connection 客户端的 Socket 连接
      */
-    private void handleClient(Socket connection) {
+    static void handleClient(Socket connection) {
         // 使用 try-with-resources 自动关闭 socket 和流
         try (Socket socket = connection;
              DataInputStream input = new DataInputStream(socket.getInputStream());
@@ -83,7 +85,7 @@ public class SocketServe {
                 output.writeUTF("Unknown command: " + command);
             }
         } catch (IOException e) {
-            System.err.println("客户端通信失败：" + e.getMessage());
+            // System.err.println("客户端通信失败：" + e.getMessage());
         }
     }
 
@@ -94,7 +96,7 @@ public class SocketServe {
      * @param output 输出流，用于向客户端发送响应
      * @throws IOException 如果发生IO错误
      */
-    private void receiveUpload(DataInputStream input, DataOutputStream output) throws IOException {
+    private static void receiveUpload(DataInputStream input, DataOutputStream output) throws IOException {
         // 读取文件名
         String requestedName = input.readUTF();
         // 获取安全文件名，防止路径遍历攻击（只保留文件名部分）
@@ -137,7 +139,7 @@ public class SocketServe {
      * @param output 输出流，用于向客户端发送文件数据
      * @throws IOException 如果发生IO错误
      */
-    private void sendDownload(DataInputStream input, DataOutputStream output) throws IOException {
+    private static void sendDownload(DataInputStream input, DataOutputStream output) throws IOException {
         // 读取请求的文件名
         String requestedName = input.readUTF();
         // 获取安全文件名，防止路径遍历攻击
@@ -168,5 +170,18 @@ public class SocketServe {
             output.flush(); // 刷新缓冲区，确保所有数据已发送
         }
         System.out.println("文件下载成功: " + safeFileName + " (" + sourceFile.length() + " 字节)"); // 添加成功打印信息
+    }
+}
+
+class CreateSocketThread extends Thread{
+    private final Socket connection;
+
+    public CreateSocketThread(Socket connection) {
+        this.connection = connection;
+    }
+
+    @Override
+    public void run() {
+        SocketServe.handleClient(connection);
     }
 }

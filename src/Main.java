@@ -1,10 +1,12 @@
 import java.sql.SQLException;
-import java.util.Scanner;
-
 import javax.swing.JFrame;
 
+
+
 public class Main {
+	public static SocketClient client;
     public static void main(String[] args) {
+		
 //        while(true){
 //            System.out.println("欢迎使用档案管理系统");
 //            System.out.println("1.登录");
@@ -15,9 +17,14 @@ public class Main {
 //                case 1:
                     try {
                         DataProcessing.connectToDatabase();
+						client = new SocketClient("localhost", 12345);
+						client.connect();
                     } catch (SQLException e) {
                         System.out.println(e.getMessage());
-//                        break;
+						return;
+                    }catch (Exception e) {
+                        System.out.println(e.getMessage());
+						return;
                     }
 //                    System.out.println("请登录");
 //                    System.out.println("请输入用户名:");
