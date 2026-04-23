@@ -44,6 +44,17 @@ public class SocketClient {
    }
 
    /**
+    * 确保当前客户端处于可用连接状态；如果没有连接则重新建立连接。
+    *
+    * @throws IOException 如果重新连接失败
+    */
+   private void ensureConnected() throws IOException {
+      if (client == null || client.isClosed() || output == null || input == null) {
+         connect();
+      }
+   }
+
+   /**
     * 关闭连接，包括输入流、输出流和socket
     * 忽略关闭过程中可能发生的异常
     */
@@ -68,6 +79,10 @@ public class SocketClient {
          }
       } catch (IOException ignored) {
       }
+
+      output = null;
+      input = null;
+      client = null;
    }
 
    /**
@@ -90,8 +105,7 @@ public class SocketClient {
          remoteFileName = file.getName();
       }
 
-      // 建立连接
-      // connect();
+      ensureConnected();
       try {
          // 发送上传命令
          output.writeUTF("UPLOAD");
@@ -117,9 +131,9 @@ public class SocketClient {
          String serverResponse = input.readUTF();
          // 判断服务器是否返回成功标志
          return "OK".equalsIgnoreCase(serverResponse);
-      } finally {
-         // 无论成功与否，最后都关闭连接
+      } catch (IOException e) {
          closeConnection();
+         throw e;
       }
    }
 
@@ -143,8 +157,7 @@ public class SocketClient {
          destination = new File(destination, remoteFileName);
       }
 
-      // 建立连接
-      // connect();
+      ensureConnected();
       try {
          // 发送下载命令
          output.writeUTF("DOWNLOAD");
@@ -183,9 +196,9 @@ public class SocketClient {
 
          // 检查文件是否成功创建
          return destination.exists();
-      } finally {
-         // 无论成功与否，最后都关闭连接
+      } catch (IOException e) {
          closeConnection();
+         throw e;
       }
    }
 }

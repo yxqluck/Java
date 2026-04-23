@@ -159,13 +159,7 @@ import java.awt.event.ActionEvent;
 		});
 		btnNewButton_1.setBounds(159, 192, 117, 39);
 		contentPane.add(btnNewButton_1);
-		// 窗口关闭时关闭连接
-		addWindowListener(new java.awt.event.WindowAdapter() {
-			@Override
-			public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-				Main.client.closeConnection();
-			}
-		});
+		// 子窗口关闭时不关闭主连接，连接生命周期由 Main 统一管理
 	}
 }
 
@@ -270,13 +264,7 @@ import java.awt.event.ActionEvent;
 			btnNewButton.setFont(new Font("宋体", Font.PLAIN, 14));
 			btnNewButton.setBounds(267, 290, 200, 45);
 			contentPane.add(btnNewButton);
-			// 窗口关闭时关闭连接
-			addWindowListener(new java.awt.event.WindowAdapter() {
-				@Override
-				public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-					Main.client.closeConnection();
-				}
-			});
+			// 子窗口关闭时不关闭主连接，连接生命周期由 Main 统一管理
 			// 加载数据
 			loadDataFromDB();
 		}

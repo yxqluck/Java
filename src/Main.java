@@ -1,3 +1,5 @@
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import javax.swing.JFrame;
 
@@ -67,6 +69,14 @@ public class Main {
 				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 				// 禁止拉伸
 				frame.setResizable(false);
+				frame.addWindowListener(new WindowAdapter() {
+					@Override
+					public void windowClosing(WindowEvent e) {
+						if (client != null) {
+							client.closeConnection();
+						}
+					}
+				});
 				
 				// 显示窗口
 				frame.setVisible(true);

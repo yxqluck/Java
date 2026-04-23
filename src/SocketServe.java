@@ -69,20 +69,28 @@ public class SocketServe {
              DataInputStream input = new DataInputStream(socket.getInputStream());
              DataOutputStream output = new DataOutputStream(socket.getOutputStream())) {
 
-            // 读取客户端发送的命令
-            String command = input.readUTF();
-            
-            // 根据命令类型执行相应操作
-            if ("UPLOAD".equalsIgnoreCase(command)) {
-                // 处理文件上传
-                receiveUpload(input, output);
-            } else if ("DOWNLOAD".equalsIgnoreCase(command)) {
-                // 处理文件下载
-                sendDownload(input, output);
-            } else {
-                // 未知命令，返回错误信息
-                output.writeUTF("ERROR");
-                output.writeUTF("Unknown command: " + command);
+            while (true) {
+                // 读取客户端发送的命令；客户端关闭连接时退出循环
+                String command;
+                try {
+                    command = input.readUTF();
+                } catch (IOException eof) {
+                    break;
+                }
+
+                // 根据命令类型执行相应操作
+                if ("UPLOAD".equalsIgnoreCase(command)) {
+                    // 处理文件上传
+                    receiveUpload(input, output);
+                } else if ("DOWNLOAD".equalsIgnoreCase(command)) {
+                    // 处理文件下载
+                    sendDownload(input, output);
+                } else {
+                    // 未知命令，返回错误信息
+                    output.writeUTF("ERROR");
+                    output.writeUTF("Unknown command: " + command);
+                    output.flush();
+                }
             }
         } catch (IOException e) {
             // System.err.println("客户端通信失败：" + e.getMessage());
@@ -129,6 +137,7 @@ public class SocketServe {
 
         // 向客户端发送成功响应
         output.writeUTF("OK");
+        output.flush();
         System.out.println("文件上传成功: " + safeFileName + " (" + fileLength + " 字节)"); // 添加成功打印信息
     }
 
@@ -158,6 +167,7 @@ public class SocketServe {
         output.writeUTF("OK");
         // 发送文件大小
         output.writeLong(sourceFile.length());
+        output.flush();
 
         // 读取文件并发送给客户端
         try (BufferedInputStream fileIn = new BufferedInputStream(new FileInputStream(sourceFile))) {
