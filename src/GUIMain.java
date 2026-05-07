@@ -83,6 +83,24 @@ public class GUIMain extends JPanel {
                                 "登录失败",
                                 JOptionPane.ERROR_MESSAGE);
                     }else{
+                    	// 判断是否能在服务端登录
+                    	boolean isLoggedOnServer = false;
+                    	if (Main.client != null) {
+                    		try {
+                    			isLoggedOnServer = Main.client.loginToServer(user.getName());
+                    		} catch (Exception ex) {
+                    			JOptionPane.showMessageDialog(null, "无法连接到服务器，部分功能可能不可用。", "警告", JOptionPane.WARNING_MESSAGE);
+                    			isLoggedOnServer = true; // 无法连接时暂时放行，或按需拒绝
+                    		}
+                    	}
+                    	if (!isLoggedOnServer && Main.client != null) {
+                    		JOptionPane.showMessageDialog(null,
+                                    "该账号已被登录，不允许重复登录！",
+                                    "登录失败",
+                                    JOptionPane.ERROR_MESSAGE);
+                    		return;
+                    	}
+
 //                        System.out.println("登录成功");
                     	JOptionPane.showMessageDialog(null,
                                 "登录成功",

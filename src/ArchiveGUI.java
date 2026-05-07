@@ -135,12 +135,17 @@ import java.awt.event.ActionEvent;
 		JButton btnNewButton_1 = new JButton("确认上传");
 		btnNewButton_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if(Operator.uploadArchive(textField.getText(), textField_1.getText(), textField_2.getText(), textField_3.getText(), filepath)) {
+				fileName=textField.getText()+fileName;
+				if(Operator.uploadArchive(textField.getText(), textField_1.getText(), textField_2.getText(), fileName, filepath)) {
 					
             		try {
 						if(filepath != null && !filepath.isEmpty()) {
 							if(Main.client.uploadFile(filepath,fileName)) {
 								JOptionPane.showMessageDialog(null, "上传成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+								textField.setText("");
+								textField_1.setText("");
+								textField_2.setText("");
+								textField_3.setText("");
 							} else {
 								JOptionPane.showMessageDialog(null, "网络上传失败！", "提示", JOptionPane.ERROR_MESSAGE);
 							}
@@ -195,7 +200,7 @@ import java.awt.event.ActionEvent;
 
 			// 表格
 			table = new JTable() {
-				// ✅ 核心：禁止选中第一行
+				//  核心：禁止选中第一行
 				@Override
 				public void changeSelection(int row, int column, boolean toggle, boolean extend) {
 					if (row == 0) { // 第一行（索引0）禁止选中
@@ -214,7 +219,7 @@ import java.awt.event.ActionEvent;
 				Class[] columnTypes = new Class[] { String.class, String.class, String.class, String.class, String.class };
 				public Class getColumnClass(int columnIndex) { return columnTypes[columnIndex]; }
 				
-				// ✅ 所有单元格都不可编辑
+				//  所有单元格都不可编辑
 				@Override
 				public boolean isCellEditable(int row, int column) {
 					return false;
@@ -223,7 +228,7 @@ import java.awt.event.ActionEvent;
 			table.setModel(tableModel);
 			contentPane.add(table);
 
-			// ✅ 去掉你手动加的第一行，用自带表头即可
+			//  去掉你手动加的第一行，用自带表头即可
 			 addRow("档案号", "创建者", "创建时间", "文件名", "描述");
 
 			// ====================== 按钮 ======================

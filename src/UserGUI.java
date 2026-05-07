@@ -237,6 +237,9 @@ class ChangeUser extends JFrame {
 	private JTextField new_password;
 	private JComboBox<String> new_role;
 	private JButton btnNewButton;
+	
+	// 当前登录的用户名（用于限制不能修改自己的角色）
+	private String currentLoginUsername;
 
 	/**
 	 * Launch the application.
@@ -245,8 +248,8 @@ class ChangeUser extends JFrame {
 //		EventQueue.invokeLater(new Runnable() {
 //			public void run() {
 //				try {
-//					ChangeUser frame = new ChangeUser();
-//					frame.setVisible(true);
+//					// ChangeUser frame = new ChangeUser("admin");
+//					// frame.setVisible(true);
 //				} catch (Exception e) {
 //					e.printStackTrace();
 //				}
@@ -257,7 +260,8 @@ class ChangeUser extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public ChangeUser() {
+	public ChangeUser(String currentUsername) {
+		this.currentLoginUsername = currentUsername;
 		setTitle("修改用户");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);  // 关闭只关这个窗口，不关整个程序
 		setBounds(100, 100, 450, 300);
@@ -300,7 +304,22 @@ class ChangeUser extends JFrame {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
-					if(!DataProcessing.updateUser(new_name.getText(), new_password.getText(), (String)new_role.getSelectedItem())) {
+					String targetName = new_name.getText().trim();
+					String targetPwd = new_password.getText().trim();
+					String targetRole = (String)new_role.getSelectedItem();
+					
+					// 【新增判断】不能修改当前登录用户的角色，避免当前账号功能异常
+					if (targetName.equals(currentLoginUsername)) {
+						AbstractUser originalUser = DataProcessing.searchUser(targetName);
+						if (originalUser != null && !originalUser.getRole().equalsIgnoreCase(targetRole)) {
+							JOptionPane.showMessageDialog(null, 
+								"不能修改当前登录账号 [" + targetName + "] 的角色！", 
+								"警告", JOptionPane.WARNING_MESSAGE);
+							return; // 直接拦截返回，不执行修改
+						}
+					}
+					
+					if(!DataProcessing.updateUser(targetName, targetPwd, targetRole)) {
 						JOptionPane.showMessageDialog(null, 
 			                    "修改用户失败！请检查信息是否正确", 
 			                    "失败", 
@@ -368,6 +387,12 @@ class ListUser extends JFrame {
 	
 	// ====================== 关键：表格模型（用来动态加数据） ======================
 	private DefaultTableModel tableModel;
+	
+	// 保存原始用户名，以便在更新或删除时能找到对应原记录
+	private java.util.List<String> originalUsernames = new java.util.ArrayList<>();
+	
+	// 当前登录的用户名（用于限制不能修改自己的角色）
+	private String currentLoginUsername;
 
 	/**
 	 * Launch the application.
@@ -376,8 +401,8 @@ class ListUser extends JFrame {
 //		EventQueue.invokeLater(new Runnable() {
 //			public void run() {
 //				try {
-//					ListUser frame = new ListUser();
-//					frame.setVisible(true);
+//					// ListUser frame = new ListUser("admin");
+//					// frame.setVisible(true);
 //				} catch (Exception e) {
 //					e.printStackTrace();
 //				}
@@ -388,10 +413,11 @@ class ListUser extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public ListUser() {
+	public ListUser(String currentUsername) {
+		this.currentLoginUsername = currentUsername;
 		setTitle("用户列表");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);  // 关闭只关这个窗口，不关整个程序
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 450, 330);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -414,10 +440,36 @@ class ListUser extends JFrame {
 			public Class getColumnClass(int columnIndex) {
 				return columnTypes[columnIndex];
 			}
+			// 【新增逻辑】控制单元格是否可编辑
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				// 获取这行原始用户名
+				if (row >= 1) { // 排除第一行（如果是你自己写的假表头）
+					String oldName = originalUsernames.get(row - 1);
+					
+					// 判断：是不是自己、是不是在服务器上有其他人正在登录这个号
+					if (oldName != null && column == 2) {
+						if (oldName.equals(currentLoginUsername)) {
+							return false; // 不能修改自己的
+						}
+						
+						// 查询服务器，这个账号如果在线，也不能被其它线程或者端修改
+						if (Main.client != null && Main.client.isUserOnline(oldName)) {
+							return false; // 在线账号不可修改
+						}
+					}
+				}
+				return true;
+			}
 		};
 		table.setModel(tableModel);
 		
 		table.getColumnModel().getColumn(1).setPreferredWidth(163);
+		
+		// ====================== 为角色列设置下拉选择框 ======================
+		JComboBox<String> roleComboBox = new JComboBox<>(new String[] {"administrator", "operator", "browser"});
+		table.getColumnModel().getColumn(2).setCellEditor(new javax.swing.DefaultCellEditor(roleComboBox));
+		
 		table.setBounds(49, 34, 339, 192);
 		contentPane.add(table);
 		
@@ -426,6 +478,7 @@ class ListUser extends JFrame {
 			Collection<AbstractUser> userCollection = DataProcessing.getAllUsers();
 			for(AbstractUser user : userCollection ) {
 				addRow(user.getName(),user.getPassword(),user.getRole());
+				originalUsernames.add(user.getName()); // 保存初始的用户名记录
 			}
 		}catch(SQLException e_list){
 			JOptionPane.showMessageDialog(null,
@@ -434,14 +487,74 @@ class ListUser extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
 		}
 		
-		// ====================== ✅ 你自己添加数据的位置（在这里写！） ======================
-		// 格式：addRow("用户名", "密码", "角色");
-		// 想加几行加几行，不需要提前设置行数！
-//		
-//		addRow("张三", "123456", "管理员");
-//		addRow("李四", "654321", "普通用户");
-//		addRow("王五", "888888", "操作员");
+		// ====================== 添加确认更改按钮 ======================
+		JButton btnConfirm = new JButton("确认更改");
+		btnConfirm.setBounds(150, 245, 130, 30);
+		contentPane.add(btnConfirm);
 		
+		btnConfirm.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// 在修改表格时点击按钮，可能还有单元格处于编辑状态，需要先停止编辑状态以保存当前输入
+				if (table.isEditing()) {
+					table.getCellEditor().stopCellEditing();
+				}
+				
+				boolean hasError = false;
+				
+				// 遍历表格数据，跳过第一行表头（索引 0）
+				for (int i = 1; i < tableModel.getRowCount(); i++) {
+					String oldName = originalUsernames.get(i - 1);
+					String newName = (String) tableModel.getValueAt(i, 0);
+					String newPwd = (String) tableModel.getValueAt(i, 1);
+					String newRole = (String) tableModel.getValueAt(i, 2);
+					
+					try {
+						// 1. 某一列用户名修改为空时，调用删除用户的逻辑 (根据原用户名删除)
+						if (newName == null || newName.trim().isEmpty()) {
+							DataProcessing.deleteUser(oldName);
+						} 
+						// 2. 用户名不为空时，调用修改用户的逻辑
+						else {
+							// 【新增拦截】如果把用户名改成了其他非空字符串，则拦截警告并还原
+							if (!oldName.equals(newName)) {
+								hasError = true;
+								JOptionPane.showMessageDialog(null, 
+									"用户名不能修改为其他内容，仅支持置空进行删除操作！\n已将非法修改的名字 [" + newName + "] 还原为 [" + oldName + "]，该用户的密码或角色修改已生效。",
+									"警告", JOptionPane.WARNING_MESSAGE);
+								// 还原变量以及刷新界面显示
+								newName = oldName;
+								tableModel.setValueAt(oldName, i, 0);
+							}
+							
+							// 【新增判断】不能修改当前登录用户的角色，避免当前账号功能异常
+							if (oldName.equals(currentLoginUsername)) {
+								// 从数据库中获取原角色的方式比较复杂，我们直接查询出原用户对象来对比
+								AbstractUser originalUser = DataProcessing.searchUser(oldName);
+								if (originalUser != null && !originalUser.getRole().equalsIgnoreCase(newRole)) {
+									hasError = true;
+									JOptionPane.showMessageDialog(null, 
+										"不能修改当前登录账号 [" + oldName + "] 的角色！\n其余修改已生效。",
+										"警告", JOptionPane.WARNING_MESSAGE);
+									// 强制把角色改回去
+									newRole = originalUser.getRole();
+								}
+							}
+							DataProcessing.updateUser(newName, newPwd, newRole);
+						}
+					} catch (SQLException ex) {
+						hasError = true;
+						JOptionPane.showMessageDialog(null, 
+							"处理用户 [" + oldName + "] 时数据库发生错误：" + ex.getMessage(),
+							"错误", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+				
+				if (!hasError) {
+					JOptionPane.showMessageDialog(null, "表格内容已成功更新！", "成功", JOptionPane.INFORMATION_MESSAGE);
+					dispose(); // 修改成功后自动关闭窗口，用户可以重新打开查看最新列表
+				}
+			}
+		});
 		
 		// ====================== 结束添加数据 ======================
 	}

@@ -69,7 +69,7 @@ public class AdministratorGUI extends JFrame {
 		JMenuItem mntmNewMenuItem_1 = new JMenuItem("修改用户");
 		mntmNewMenuItem_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ChangeUser chanuser=new ChangeUser();
+				ChangeUser chanuser=new ChangeUser(user.getName());
 				chanuser.setVisible(true);
 			}
 		});
@@ -78,7 +78,7 @@ public class AdministratorGUI extends JFrame {
 		JMenuItem mntmNewMenuItem = new JMenuItem("用户列表");
 		mntmNewMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ListUser listuser=new ListUser();
+				ListUser listuser=new ListUser(user.getName());
 				listuser.setVisible(true);
 			}
 		});
@@ -115,6 +115,10 @@ public class AdministratorGUI extends JFrame {
 		JMenuItem mntmNewMenuItem_7 = new JMenuItem("退出登录");
 		mntmNewMenuItem_7.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if (Main.client != null) {
+					Main.client.logoutFromServer();
+				}
+				
 				JFrame frame = new JFrame("档案管理系统");
 				
 				// 把你的登录面板放进去

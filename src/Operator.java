@@ -1,9 +1,4 @@
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Scanner;
@@ -121,29 +116,25 @@ public class Operator extends AbstractUser {
 					}
 
 					// 创建目标目录（如果不存在）
-					File targetDir = new File(archiveDir);
+					// File targetDir = new File(archiveDir);
 
-					// 构建目标文件的完整路径
-					File targetFile = new File(targetDir, archiveFile.getName());
+					// // 构建目标文件的完整路径
+					// File targetFile = new File(targetDir, archiveFile.getName());
 
-					// 使用 try-with-resources 确保资源正确关闭
-					// 通过缓冲流实现文件的高效复制
-					byte[] buffer = new byte[bufferSize];
-					try (BufferedInputStream inFile = new BufferedInputStream(new FileInputStream(archiveFile));
-						BufferedOutputStream outFile = new BufferedOutputStream(new FileOutputStream(targetFile))) {
+					// // 使用 try-with-resources 确保资源正确关闭
+					// // 通过缓冲流实现文件的高效复制
+					// byte[] buffer = new byte[bufferSize];
+					// try (BufferedInputStream inFile = new BufferedInputStream(new FileInputStream(archiveFile));
+					// 	BufferedOutputStream outFile = new BufferedOutputStream(new FileOutputStream(targetFile))) {
 						
-						int bytesRead;
-						while ((bytesRead = inFile.read(buffer)) != -1) {
-							outFile.write(buffer, 0, bytesRead);
-						}
-					}
+					// 	int bytesRead;
+					// 	while ((bytesRead = inFile.read(buffer)) != -1) {
+					// 		outFile.write(buffer, 0, bytesRead);
+					// 	}
+					// }
 
-					System.out.println("文件上传成功：" + targetFile.getAbsolutePath());
+					// System.out.println("文件上传成功：" + targetFile.getAbsolutePath());
 					return true;
-				} catch (IOException e) {
-					// 捕获 IO 异常
-					System.err.println("上传过程中发生 IO 错误：" + e.getMessage());
-					return false;
 				} catch (Exception e) {
 					// 捕获未知异常并返回失败
 					System.err.println("上传过程中发生未知错误：" + e.getMessage());

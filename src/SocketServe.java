@@ -8,6 +8,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SocketServe {
     // 服务器监听的端口号
@@ -15,7 +17,10 @@ public class SocketServe {
     // 文件传输缓冲区大小
     private static final int BUFFER_SIZE = 8192;
     // 服务器存储文件的目录名称
-    private static final String STORAGE_DIR ="..\\archive_files";
+    static final String STORAGE_DIR ="..\\archive_files";
+    
+    // 保存当前所有在线登录的用户名，避免多线程重复登录同一个账号
+    private static final Set<String> loggedInUsers = ConcurrentHashMap.newKeySet();
 
     /**
      * 程序主入口，启动服务器
@@ -43,12 +48,13 @@ public class SocketServe {
             // 无限循环，持续接受客户端连接
             while (true) {
                 try {
-                    i++;
+                    
                     // 阻塞等待客户端连接
                     Socket connection = serverSocket.accept();
                     // 为每个客户端连接创建独立线程处理
                     new CreateSocketThread(connection).start();
                     System.out.println("启动线程 " + i);
+                    i++;
                 } catch (IOException e) {
                     System.err.println("处理客户端连接时发生错误：" + e.getMessage());
                 }
@@ -64,6 +70,7 @@ public class SocketServe {
      * @param connection 客户端的 Socket 连接
      */
     static void handleClient(Socket connection) {
+        String loggedInUser = null; // 当前线程绑定的已登录用户
         // 使用 try-with-resources 自动关闭 socket 和流
         try (Socket socket = connection;
              DataInputStream input = new DataInputStream(socket.getInputStream());
@@ -85,6 +92,31 @@ public class SocketServe {
                 } else if ("DOWNLOAD".equalsIgnoreCase(command)) {
                     // 处理文件下载
                     sendDownload(input, output);
+                } else if ("LOGIN".equalsIgnoreCase(command)) {
+                    String username = input.readUTF();
+                    if (loggedInUsers.contains(username)) {
+                        output.writeUTF("ERROR");
+                        output.writeUTF("该账号已在其它地方登录，不允许重复登录");
+                    } else {
+                        loggedInUsers.add(username);
+                        loggedInUser = username;
+                        output.writeUTF("OK");
+                    }
+                    output.flush();
+                } else if ("LOGOUT".equalsIgnoreCase(command)) {
+                    if (loggedInUser != null) {
+                        loggedInUsers.remove(loggedInUser);
+                        System.out.println("用户 " + loggedInUser + " 退出");
+                        loggedInUser = null;
+                    }
+                    output.writeUTF("OK");
+                    output.flush();
+                } else if ("CHECK_ONLINE".equalsIgnoreCase(command)) {
+                    // 查询用户是否在线
+                    String usernameToCheck = input.readUTF();
+                    boolean isOnline = loggedInUsers.contains(usernameToCheck);
+                    output.writeBoolean(isOnline);
+                    output.flush();
                 } else {
                     // 未知命令，返回错误信息
                     output.writeUTF("ERROR");
@@ -93,7 +125,13 @@ public class SocketServe {
                 }
             }
         } catch (IOException e) {
-            // System.err.println("客户端通信失败：" + e.getMessage());
+            System.err.println("客户端通信失败：" + e.getMessage());
+        } finally {
+            System.out.println(Thread.currentThread().getName() + " 断开");
+            // 无论如何断开，都要清理当前保存的登录状态
+            if (loggedInUser != null) {
+                loggedInUsers.remove(loggedInUser);
+            }
         }
     }
 

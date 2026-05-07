@@ -201,4 +201,62 @@ public class SocketClient {
          throw e;
       }
    }
+
+   /**
+    * 检查指定用户是否在服务端在线
+    * @param username 要检查的用户名
+    * @return true如果在服务端已经登录
+    */
+   public boolean isUserOnline(String username) {
+      try {
+         ensureConnected();
+         output.writeUTF("CHECK_ONLINE");
+         output.writeUTF(username);
+         output.flush();
+
+         return input.readBoolean();
+      } catch (IOException e) {
+         System.err.println("检查在线状态失败: " + e.getMessage());
+         return false; // 发生异常可默认当作未在线或者自行处理
+      }
+   }
+
+   /**
+    * 登录到服务器记录当前用户
+    * @param username 用户名
+    * @return 如果登录成功返回true，否则返回false
+    * @throws IOException
+    */
+   public boolean loginToServer(String username) throws IOException {
+      ensureConnected();
+      try {
+         output.writeUTF("LOGIN");
+         output.writeUTF(username);
+         output.flush();
+
+         String serverResponse = input.readUTF();
+         if (!"OK".equalsIgnoreCase(serverResponse)) {
+            input.readUTF(); // 读取错误信息
+            return false;
+         }
+         return true;
+      } catch (IOException e) {
+         closeConnection();
+         throw e;
+      }
+   }
+
+   /**
+    * 退出服务器并清除登录状态
+    */
+   public void logoutFromServer() {
+      try {
+         ensureConnected();
+         output.writeUTF("LOGOUT");
+         output.flush();
+         input.readUTF(); // ignore response
+      } catch (IOException e) {
+         closeConnection();
+      }
+   }
 }

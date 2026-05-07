@@ -76,6 +76,10 @@ public class BrowserGUI extends JFrame {
 		JMenuItem mntmNewMenuItem_7 = new JMenuItem("退出登录");
 		mntmNewMenuItem_7.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if (Main.client != null) {
+					Main.client.logoutFromServer();
+				}
+				
 				JFrame frame = new JFrame("档案管理系统");
 				
 				// 把你的登录面板放进去

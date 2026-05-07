@@ -8,7 +8,7 @@ import java.util.*;
  * @author gongjing
  */
 public  class DataProcessing {
-	private static Connection connection = null;
+	static Connection connection = null;
 	static final double EXCEPTION_CONNECT_PROBABILITY=0.1;
 	static final double EXCEPTION_DISCONNECT_PROBABILITY=0.1;
 
